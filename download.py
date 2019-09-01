@@ -2,6 +2,8 @@ import youtube_dl
 import sys
 import re
 
+from options import download_opts, info_opts
+
 
 def get_filename(msg):
     fpattern = r"storage\/.*\.(wav|mp3|m4a)"
@@ -13,7 +15,7 @@ def get_filename(msg):
     return result
 
 
-class Intercepter():
+class Intercepter:
     def __init__(self):
         self.result = None
         self.type = None
@@ -30,23 +32,6 @@ class Intercepter():
 
     def error(self, msg):
         print(msg)
-
-
-download_opts = {
-    'format':         'bestaudio/best',
-    'postprocessors': [{
-        'key':              'FFmpegExtractAudio',
-        'preferredcodec':   'm4a',
-        'preferredquality': '320',
-        }],
-    'outtmpl':        'storage/%(title)s---%(uploader)s.%(ext)s',
-    'logger':         None,
-    }
-
-info_opts = {
-    'listformats': True,
-    'logger':      None,
-    }
 
 
 def get_audio(link):
@@ -74,9 +59,9 @@ def get_info(link):
 def main():
     if len(sys.argv) > 1:
         if sys.argv[1] == 'get':
-            get_audio(link)
+            get_audio(sys.argv[2])
         elif sys.argv[1] == 'info':
-            get_info(link)
+            get_info(sys.argv[2])
 
 
 if __name__ == "__main__":
