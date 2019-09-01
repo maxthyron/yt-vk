@@ -1,15 +1,14 @@
 download_opts = {
     'format':         'bestaudio/best',
-    'postprocessors': [{
-        'key':              'FFmpegExtractAudio',
-        'preferredcodec':   'm4a',
-        'preferredquality': '320',
-        }],
+    'postprocessors': [],
     'outtmpl':        'storage/%(title)s---%(uploader)s.%(ext)s',
-    'logger':         None,
+    }
+
+file_format = {
+    'key':              'FFmpegExtractAudio',
+    'preferredquality': '320',
     }
 
 info_opts = {
     'listformats': True,
-    'logger':      None,
     }

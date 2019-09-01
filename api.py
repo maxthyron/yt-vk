@@ -5,7 +5,7 @@ import re
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from vk_api.utils import get_random_id
 from env import auth
-from download import get_audio
+from download import Downloader
 
 
 def find_yt(text):
@@ -48,7 +48,8 @@ def main():
     upload = vk_api.VkUpload(audio_session)
     uploadd = vk_api.VkUpload(vk_session)
     print("Got Upload Object")
-
+    loader = Downloader()
+    audio_format = "mp3"
     print("Start Longpoll listening")
     for event in longpoll.listen():
         if event.type == VkBotEventType.MESSAGE_NEW:
@@ -56,13 +57,15 @@ def main():
             print('Message:', event.obj.text)
             links = find_yt(event.obj.text)
             for l in links:
-                result = get_audio(l)
+                result = loader.download(l)
                 print(result)
-                path, title, artist = result[0]
-                # upload_yt(vk, upload, event, path, title, artist)
-                print("BEFORE")
-                upload_doc(vk, uploadd, event, path, title)
-                print("AFTER")
+                if result:
+                    path = result + f".{audio_format}"
+                    title, artist = result.strip("storage/.mp3").split("---")
+                    upload_yt(vk, upload, event, path, title, artist)
+                    print("BEFORE")
+                    # upload_doc(vk, uploadd, event, path, title)
+                    print("AFTER")
         elif event.type == VkBotEventType.MESSAGE_REPLY:
             print("From(Me):", event.obj.peer_id)
             print('Message:', event.obj.text)
