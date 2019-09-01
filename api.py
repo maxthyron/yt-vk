@@ -1,29 +1,34 @@
-from __future__ import unicode_literals
 import vk_api
 import json
 import re
+
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from vk_api.utils import get_random_id
 from env import auth
 from download import get_audio
 
+
 def find_yt(text):
     pattern = r'(http(s)?:\/\/)?((w){3}.)?youtu(be|.be)?(\.com)?\/.\S*'
-    links = [l.group() for l in  re.finditer(pattern, text)]
+    links = [l.group() for l in re.finditer(pattern, text)]
     return links
+
 
 def upload_doc(vk, upload, event, path, title):
     doc = upload.document(path, title=title, tags=[], message_peer_id=event.obj.peer_id)['doc']
     print(doc)
-    vk.messages.send(user_id=event.obj.from_id, random_id=get_random_id(), attachment=f"doc{doc['owner_id']}_{doc['id']}")
+    vk.messages.send(user_id=event.obj.from_id, random_id=get_random_id(),
+                     attachment=f"doc{doc['owner_id']}_{doc['id']}")
+
 
 def upload_yt(vk, upload, event, path, title, artist):
     audio = upload.audio(audio=path,
                          artist=artist,
                          title=title)
     vk.messages.send(user_id=event.obj.from_id,
-            random_id=get_random_id(),
-            attachment=f"audio{audio['owner_id']}_{audio['id']}")
+                     random_id=get_random_id(),
+                     attachment=f"audio{audio['owner_id']}_{audio['id']}")
+
 
 def main():
     vk_session = vk_api.VkApi(token=auth.KEY)
@@ -51,7 +56,7 @@ def main():
             print('Message:', event.obj.text)
             links = find_yt(event.obj.text)
             for l in links:
-                result = get_audio(l)                
+                result = get_audio(l)
                 print(result)
                 path, title, artist = result[0]
                 # upload_yt(vk, upload, event, path, title, artist)
@@ -65,6 +70,7 @@ def main():
         else:
             print(event.type)
             print()
+
 
 if __name__ == '__main__':
     main()

@@ -2,6 +2,7 @@ import youtube_dl
 import sys
 import re
 
+
 def get_filename(msg):
     fpattern = r"storage\/.*\.(wav|mp3|m4a)"
     fnames = re.finditer(fpattern, msg)
@@ -11,10 +12,12 @@ def get_filename(msg):
         result.append([name.group()] + name.group().strip("storage/.mp3").split("---"))
     return result
 
+
 class Intercepter():
     def __init__(self):
         self.result = None
         self.type = None
+
     def debug(self, msg):
         if msg.startswith('[ffmpeg] Destination:'):
             self.result = msg
@@ -28,21 +31,23 @@ class Intercepter():
     def error(self, msg):
         print(msg)
 
+
 download_opts = {
-    'format': 'bestaudio/best',
+    'format':         'bestaudio/best',
     'postprocessors': [{
-        'key': 'FFmpegExtractAudio',
-        'preferredcodec': 'm4a',
+        'key':              'FFmpegExtractAudio',
+        'preferredcodec':   'm4a',
         'preferredquality': '320',
-    }],
-    'outtmpl': 'storage/%(title)s---%(uploader)s.%(ext)s',
-    'logger': None,
-}
+        }],
+    'outtmpl':        'storage/%(title)s---%(uploader)s.%(ext)s',
+    'logger':         None,
+    }
 
 info_opts = {
-    'listformats' : True,
-    'logger': None,
-}
+    'listformats': True,
+    'logger':      None,
+    }
+
 
 def get_audio(link):
     inter = Intercepter()
@@ -54,6 +59,7 @@ def get_audio(link):
         pass
     return get_filename(inter.result)
 
+
 def get_info(link):
     inter = Intercepter()
     info_opts['logger'] = inter
@@ -64,12 +70,14 @@ def get_info(link):
     except:
         pass
 
+
 def main():
     if len(sys.argv) > 1:
         if sys.argv[1] == 'get':
             get_audio(link)
         elif sys.argv[1] == 'info':
             get_info(link)
+
 
 if __name__ == "__main__":
     main()
