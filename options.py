@@ -2,6 +2,7 @@ download_opts = {
     'format':         'bestaudio/best',
     'postprocessors': [],
     'outtmpl':        'storage/%(title)s---%(uploader)s.%(ext)s',
+    'progress_hooks': [],
     }
 
 file_format = {
@@ -10,5 +11,6 @@ file_format = {
     }
 
 info_opts = {
-    'listformats': True,
+    'listformats':    True,
+    'progress_hooks': [],
     }

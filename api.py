@@ -8,9 +8,17 @@ from env import auth
 from download import Downloader
 
 
-def find_yt(text):
-    pattern = r'(http(s)?:\/\/)?((w){3}.)?youtu(be|.be)?(\.com)?\/.\S*'
-    links = [l.group() for l in re.finditer(pattern, text)]
+def find_yt(api, event):
+    links = None
+    if event.text != '':
+        pattern = r'(http(s)?:\/\/)?((w){3}.)?youtu(be|.be)?(\.com)?\/.\S*'
+        links = [l.group() for l in re.finditer(pattern, event.text)]
+    else:
+        owner_id = event['attachments'][0]['video']['owner_id']
+        att_id = event['attachments'][0]['video']['id']
+        links = [api.video.get(owner_id=owner_id,
+                               videos=f"{owner_id}_{att_id}")['items'][0]['player']]
+
     return links
 
 
@@ -45,8 +53,8 @@ def main():
         print(error_msg)
         return
     print("Got Audio Session")
+    new_vk = audio_session.get_api()
     upload = vk_api.VkUpload(audio_session)
-    uploadd = vk_api.VkUpload(vk_session)
     print("Got Upload Object")
     loader = Downloader()
     audio_format = "mp3"
@@ -54,18 +62,26 @@ def main():
     for event in longpoll.listen():
         if event.type == VkBotEventType.MESSAGE_NEW:
             print("From:", event.obj.from_id)
+            print("Content:", event.obj['attachments'])
             print('Message:', event.obj.text)
-            links = find_yt(event.obj.text)
-            for l in links:
-                result = loader.download(l)
-                print(result)
-                if result:
-                    path = result + f".{audio_format}"
-                    title, artist = result.strip("storage/.mp3").split("---")
-                    upload_yt(vk, upload, event, path, title, artist)
-                    print("BEFORE")
-                    # upload_doc(vk, uploadd, event, path, title)
-                    print("AFTER")
+            links = find_yt(new_vk, event.obj)
+            if links:
+                for l in links:
+                    result = loader.download(l)
+                    print(result)
+                    if result:
+                        path = result + f".{audio_format}"
+                        title, artist = result.strip("storage/.mp3").split("---")
+                        # TODO: Bug - Ayase -> Ay
+                        upload_yt(vk, upload, event, path, title, artist)
+                        print("BEFORE")
+                        # upload_doc(vk, uploadd, event, path, title)
+                        print("AFTER")
+            else:
+                vk.messages.send(user_id=event.obj.from_id,
+                                 random_id=get_random_id(),
+                                 message="Video not found")
+
         elif event.type == VkBotEventType.MESSAGE_REPLY:
             print("From(Me):", event.obj.peer_id)
             print('Message:', event.obj.text)

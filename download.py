@@ -1,9 +1,15 @@
 import youtube_dl
 import sys
 import re
+import requests
 
 from options import download_opts, info_opts, file_format
 from parse import args
+
+
+def my_hook(d):
+    if d['status'] == 'finished':
+        print(d['filename'])
 
 
 class Logger:
@@ -42,6 +48,7 @@ class Downloader:
     def download(self, link, audio_format="mp3"):
         file_format.update({'preferredcodec': audio_format})
         download_opts['postprocessors'].append(file_format)
+        download_opts['progress_hooks'].append(my_hook)
         print(download_opts)
 
         try:
@@ -50,7 +57,7 @@ class Downloader:
                 # Filename is known by the time this function ends
         except:
             e = sys.exc_info()[0]
-            print("Error:", e)
+            print("Except error:", e)
             print(self.logger.result)
 
         return self.logger.filename
@@ -59,18 +66,19 @@ class Downloader:
         try:
             with youtube_dl.YoutubeDL(info_opts) as ydl:
                 ydl.download([link])
-            print(self.logger.result if self.logger.result else "Fail")
         except:
             pass
 
+        print(self.logger.result)
+
 
 def main():
-    print(args)
+    print(args.format)
     loader = Downloader()
     if args.info:
         loader.info(args.link[0])
     elif args.format:
-        loader.download(args.link[0], args.format)
+        loader.download(args.link[0], args.format[0])
 
 
 if __name__ == "__main__":
