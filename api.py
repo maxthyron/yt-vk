@@ -14,8 +14,11 @@ def find_yt(api, event):
         pattern = r'(http(s)?:\/\/)?((w){3}.)?youtu(be|.be)?(\.com)?\/.\S*'
         links = [l.group() for l in re.finditer(pattern, event.text)]
     else:
+        print(event['attachments'])
         owner_id = event['attachments'][0]['video']['owner_id']
         att_id = event['attachments'][0]['video']['id']
+        print(api.video.get(owner_id=owner_id,
+                            videos=f"{owner_id}_{att_id}")['items'][0]['player'])
         links = [api.video.get(owner_id=owner_id,
                                videos=f"{owner_id}_{att_id}")['items'][0]['player']]
 
