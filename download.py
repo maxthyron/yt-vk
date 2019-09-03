@@ -8,8 +8,7 @@ from parse import args
 
 
 def my_hook(d):
-    if d['status'] == 'finished':
-        print('!!!!!!!!!!!!', d['filename'])
+    pass
 
 
 class Logger:
@@ -48,7 +47,6 @@ class Downloader:
         file_format.update({'preferredcodec': audio_format})
         download_opts['postprocessors'].append(file_format)
         download_opts['progress_hooks'].append(my_hook)
-        print(download_opts)
 
         try:
             with youtube_dl.YoutubeDL(download_opts) as ydl:

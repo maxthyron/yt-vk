@@ -37,6 +37,9 @@ class VkBot:
             if event.type == VkBotEventType.MESSAGE_NEW:
                 print("From:", event.obj.from_id)
                 print('Message:', event.obj.text)
+                self.group_api.messages.send(user_id=event.obj.from_id,
+                                             random_id=get_random_id(),
+                                             message="Wait a bit")
                 link = self.find_yt(event.obj)
                 if link:
                     result = self.loader.download(link)
@@ -53,7 +56,7 @@ class VkBot:
                                                  message="Video not found")
 
             elif event.type == VkBotEventType.MESSAGE_REPLY:
-                print("From(Me):", event.obj.peer_id)
+                print("From(Bot):", event.obj.peer_id)
                 print('Message:', event.obj.text)
                 print()
             else:
@@ -61,12 +64,19 @@ class VkBot:
                 print()
 
     def upload_yt(self, event, path, title, artist):
-        audio = self.upload.audio(audio=path,
-                                  artist=artist,
-                                  title=title)
-        self.group_api.messages.send(user_id=event.obj.from_id,
-                                     random_id=get_random_id(),
-                                     attachment=f"audio{audio['owner_id']}_{audio['id']}")
+        try:
+            audio = self.upload.audio(audio=path,
+                                      artist=artist,
+                                      title=title)
+        except vk_api.exceptions.ApiError as e:
+            self.group_api.messages.send(user_id=event.obj.from_id,
+                                         random_id=get_random_id(),
+                                         message=f"{e.error['error_msg']}")
+        else:
+            self.group_api.messages.send(user_id=event.obj.from_id,
+                                         random_id=get_random_id(),
+                                         message="Your audio:",
+                                         attachment=f"audio{audio['owner_id']}_{audio['id']}")
 
     def find_yt(self, event):
         if event.text != '':
