@@ -9,7 +9,7 @@ from parse import args
 
 def my_hook(d):
     if d['status'] == 'finished':
-        print(d['filename'])
+        print('!!!!!!!!!!!!', d['filename'])
 
 
 class Logger:
@@ -23,7 +23,6 @@ class Logger:
         self.result = msg
 
         if msg.startswith('[download] '):  # The message contains info about destination
-            print("FOUND")
             fpattern = r"storage\/.+?(?=\.)"  # Needs to be saved(and fixed in the future)
             fname = re.search(fpattern, msg)  # TODO: Add custom storage dir
 
