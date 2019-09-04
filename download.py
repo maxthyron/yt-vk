@@ -7,10 +7,6 @@ from options import download_opts, info_opts, file_format
 from parse import args
 
 
-def my_hook(d):
-    pass
-
-
 class Logger:
     def __init__(self):
         print("Logger created")
@@ -46,7 +42,6 @@ class Downloader:
     def download(self, link, audio_format="mp3"):
         file_format.update({'preferredcodec': audio_format})
         download_opts['postprocessors'].append(file_format)
-        download_opts['progress_hooks'].append(my_hook)
 
         try:
             with youtube_dl.YoutubeDL(download_opts) as ydl:
