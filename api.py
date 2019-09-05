@@ -79,7 +79,9 @@ class VkBot:
     def find_yt(self, event):
         if event.text != '':
             pattern = r'(http(s)?:\/\/)?((w){3}.)?youtu(be|.be)?(\.com)?\/.\S*'
-            return re.search(pattern, event.text).group()
+            result = re.search(pattern, event.text)
+            if result:
+                return result.group()
         else:
             if event['attachments']:
                 attachment = event['attachments'][0]
