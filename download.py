@@ -1,7 +1,8 @@
 import youtube_dl
 import sys
 import re
-import requests
+import zipfile
+import os
 
 from options import download_opts, info_opts, file_format
 from parse import args
@@ -17,8 +18,11 @@ class Logger:
         print(msg)
         self.result = msg
 
-        if msg.startswith('[download] '):  # The message contains info about destination
-            fpattern = r"storage\/.+?(?=\.)"  # Needs to be saved(and fixed in the future)
+        if msg.startswith('[ffmpeg] Destination:'):  # The message contains info about destination
+            fpattern = r"/.*\.(wav|webm|mp3|m4a)"  # Needs to be saved(and
+            # fixed in
+            # the
+            # future)
             fname = re.search(fpattern, msg)  # TODO: Add custom storage dir
 
             self.filename = fname.group()
@@ -33,13 +37,17 @@ class Logger:
 
 
 class Downloader:
-    def __init__(self):
+    def __init__(self, storage_path="storage"):
         print("Downloader created")
+        self.storage_path = storage_path
         self.logger = Logger()
-        download_opts.update({"logger": self.logger})
+        download_opts.update(
+            {"logger":  self.logger,
+             "outtmpl": storage_path + '/%(title)s---%(uploader)s.%(ext)s',
+             })
         info_opts.update({"logger": self.logger})
 
-    def download(self, link, audio_format="mp3"):
+    def download(self, link, audio_format="mp3", zip_file=False):
         file_format.update({'preferredcodec': audio_format})
         download_opts['postprocessors'].append(file_format)
 
@@ -52,7 +60,15 @@ class Downloader:
             print("Except error:", e)
             print(self.logger.result)
 
-        return self.logger.filename
+        file_path = self.storage_path + self.logger.filename
+        if zip_file:
+            print()
+            self.zip(file_path)
+        return file_path
+
+    def zip(self, path):
+        with zipfile.ZipFile(path + ".wav", 'w', zipfile.ZIP_STORED) as ziph:
+            ziph.write(path)
 
     def info(self, link):
         try:
@@ -65,12 +81,11 @@ class Downloader:
 
 
 def main():
-    print(args.format)
     loader = Downloader()
     if args.info:
         loader.info(args.link[0])
     elif args.format:
-        loader.download(args.link[0], args.format[0])
+        loader.download(args.link[0], args.format[0], zip_file=True)
 
 
 if __name__ == "__main__":
