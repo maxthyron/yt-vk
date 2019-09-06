@@ -55,9 +55,8 @@ class Downloader:
             with youtube_dl.YoutubeDL(download_opts) as ydl:
                 ydl.download([link])  # Wait here for response(OK = 0)
                 # Filename is known by the time this function ends
-        except:
-            e = sys.exc_info()[0]
-            print("Except error:", e)
+        except Exception as e:
+            print(e)
             print(self.logger.result)
 
         file_path = self.storage_path + self.logger.filename

@@ -37,35 +37,42 @@ class VkBot:
                                      message=message,
                                      attachment=attachment)
 
+    def response(self, event):
+        self.send_message(user_id=event.obj.from_id, message="Wait a bit")
+        link = self.find_yt(event.obj)
+        if link:
+            result = self.loader.download(link)
+            if result:
+                if not result.endswith(".mp3"):
+                    index = result.find(".")
+                    path = result.replace(result[index:], ".mp3")
+                else:
+                    path = result
+                title, artist = result.lstrip("storage/").rstrip(".mp3").split("---")
+                self.upload_yt(event, path, title, artist)
+                os.remove(path)
+        else:
+            self.send_message(user_id=event.obj.from_id, message="Video not found")
+        print()
+
     def start(self):
         print("Start Longpoll listening")
-        for event in self.longpoll.listen():
-            if event.type == VkBotEventType.MESSAGE_NEW:
-                print("From:", event.obj.from_id)
-                print('Message:', event.obj.text)
-                self.send_message(user_id=event.obj.from_id, message="Wait a bit")
-                link = self.find_yt(event.obj)
-                if link:
-                    result = self.loader.download(link)
-                    if result:
-                        if not result.endswith(".mp3"):
-                            index = result.find(".")
-                            path = result.replace(result[index:], ".mp3")
-                        else:
-                            path = result
-                        title, artist = result.lstrip("storage/").rstrip(".mp3").split("---")
-                        self.upload_yt(event, path, title, artist)
-                        os.remove(path)
-                else:
-                    self.send_message(user_id=event.obj.from_id, message="Video not found")
-                print()
-            elif event.type == VkBotEventType.MESSAGE_REPLY:
-                print("From(Bot):", event.obj.peer_id)
-                print('Message:', event.obj.text)
-                print()
-            else:
-                print(event.type)
-                print()
+        while True:
+            try:
+                for event in self.longpoll.listen():
+                    if event.type == VkBotEventType.MESSAGE_NEW:
+                        print("From:", event.obj.from_id)
+                        print('Message:', event.obj.text)
+                        self.response(event)
+                    elif event.type == VkBotEventType.MESSAGE_REPLY:
+                        print("From(Bot):", event.obj.peer_id)
+                        print('Message:', event.obj.text)
+                        print()
+                    else:
+                        print(event.type)
+                        print()
+            except Exception:
+                self.start()
 
     def upload_yt(self, event, path, title, artist):
         try:
