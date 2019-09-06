@@ -63,6 +63,8 @@ class VkBot:
                     if event.type == VkBotEventType.MESSAGE_NEW:
                         print("From:", event.obj.from_id)
                         print('Message:', event.obj.text)
+                        if event.obj.from_id == '50478658':
+                            self.send_message('50478658', 'Privet, My Kucold Highness!')
                         self.response(event)
                     elif event.type == VkBotEventType.MESSAGE_REPLY:
                         print("From(Bot):", event.obj.peer_id)
