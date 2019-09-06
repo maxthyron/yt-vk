@@ -52,7 +52,7 @@ class VkBot:
                 self.upload_yt(event, path, title, artist)
                 os.remove(path)
         else:
-            self.send_message(user_id=event.obj.from_id, message="Video not found")
+            self.send_error(event)
         print()
 
     def start(self):
@@ -84,6 +84,10 @@ class VkBot:
         else:
             self.send_message(user_id=event.obj.from_id, message="Your audio:",
                               attachment=f"audio{audio['owner_id']}_{audio['id']}")
+
+    def send_error(self, event):
+        self.send_message(user_id=event.obj.from_id, message='',
+                          attachment='photo-185940778_457239022')
 
     def find_yt(self, event):
         if event.text != '':
