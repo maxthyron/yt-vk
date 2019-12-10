@@ -1,6 +1,8 @@
+import os
 import vk_api
 import re
-import os
+import signal
+import sys
 
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from vk_api.utils import get_random_id
@@ -17,6 +19,15 @@ class VkBot:
             print(error_msg)
             return
 
+        if os.path.exists("pid"):
+            exit()
+        else:
+            with open("pid", "w") as pid:
+                pid.write(str(os.getpid()))
+
+        signal.signal(signal.SIGTERM, self.catch_signal)
+
+        print("ID:", os.getpid())
         print("Got VK API Session")
         self.group_session = vk_api.VkApi(token=auth.KEY)
         print("Got Group Session")
@@ -30,6 +41,11 @@ class VkBot:
         print("Got Upload Object")
         self.loader = Downloader()
         print("Got Downloader Object")
+
+    def catch_signal(self, signal, frame):
+        print("Signal:", signal)
+        os.remove("pid")
+        sys.exit(0)
 
     def send_message(self, user_id, message, attachment=None):
         self.group_api.messages.send(user_id=user_id,
@@ -63,8 +79,6 @@ class VkBot:
                     if event.type == VkBotEventType.MESSAGE_NEW:
                         print("From:", event.obj.from_id)
                         print('Message:', event.obj.text)
-                        if event.obj.from_id == 50478658:
-                            self.send_message(event.obj.from_id, 'Privet, My Kucold Highness!')
                         self.response(event)
                     elif event.type == VkBotEventType.MESSAGE_REPLY:
                         print("From(Bot):", event.obj.peer_id)
@@ -73,8 +87,14 @@ class VkBot:
                     else:
                         print(event.type)
                         print()
-            except Exception:
+            except KeyboardInterrupt:
+                print("Keyboard interrupt")
+                os.remove("pid")
+                os._exit(0)
+            except Exception as e:
+                print("Exception:", e)
                 self.start()
+                os.exit(0)
 
     def upload_yt(self, event, path, title, artist):
         try:
