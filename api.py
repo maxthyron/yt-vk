@@ -20,6 +20,7 @@ class VkBot:
             return
 
         if os.path.exists("pid"):
+            print("Pid file already exists")
             exit()
         else:
             with open("pid", "w") as pid:
