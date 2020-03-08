@@ -8,6 +8,7 @@ import socket
 import urllib3
 import signal
 import sys
+import pprint
 
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from vk_api.utils import get_random_id
@@ -26,9 +27,14 @@ class VkBot:
             self.vk_session = vk_api.VkApi(login=os.getenv("LOGIN"), password=os.getenv("PASSW"))
             try:
                 self.vk_session.auth(token_only=True)
-            except vk_api.AuthError as error_msg:
-                print(error_msg)
-                return
+            except vk_api.AuthError as e:
+                print(e)
+                sys.exit(0)
+            except vk_api.exceptions.Captcha as e:
+                print("CAPTCHA")
+                print(e.get_url())
+                code = input()
+                e.try_again(key=code)
 
             print("ID:", os.getpid())
             print("Got VK API Session")
@@ -63,7 +69,7 @@ class VkBot:
                                      attachment=attachment)
 
     def response(self, event):
-        self.send_message(user_id=event.obj.from_id, message="Wait a bit")
+        self.send_message(user_id=event.obj.message["from_id"], message="Wait a bit")
         link = self.find_yt(event.obj)
         if link:
             result = self.loader.download(link)
@@ -86,12 +92,13 @@ class VkBot:
             try:
                 for event in self.longpoll.listen():
                     if event.type == VkBotEventType.MESSAGE_NEW:
-                        print("From:", event.obj.from_id)
-                        print('Message:', event.obj.text)
+                        print("Event:\n", pprint.pprint(event.obj))
+                        print("From:", event.obj.message["from_id"])
+                        print('Message:', event.obj.message["text"])
                         self.response(event)
                     elif event.type == VkBotEventType.MESSAGE_REPLY:
                         print("From(Bot):", event.obj.peer_id)
-                        print('Message:', event.obj.text)
+                        print('Message(Bot):', event.obj.text)
                         print()
                     else:
                         print(event.type)
@@ -109,24 +116,24 @@ class VkBot:
         try:
             audio = self.upload.audio(audio=path, title=title, artist=artist)
         except vk_api.exceptions.ApiError as e:
-            self.send_message(user_id=event.obj.from_id, message=f"{e.error['error_msg']}")
+            self.send_message(user_id=event.obj.message["from_id"], message=f"{e.error['error_msg']}")
         else:
-            self.send_message(user_id=event.obj.from_id, message="Your audio:",
+            self.send_message(user_id=event.obj.message["from_id"], message="Your audio:",
                               attachment=f"audio{audio['owner_id']}_{audio['id']}")
 
     def send_error(self, event):
-        self.send_message(user_id=event.obj.from_id, message='',
+        self.send_message(user_id=event.obj.message["from_id"], message='',
                           attachment='photo-185940778_457239022')
 
     def find_yt(self, event):
-        if event.text != '':
+        if event.message["text"] != '':
             pattern = r'(http(s)?:\/\/)?((w){3}.)?youtu(be|.be)?(\.com)?\/.\S*'
-            result = re.search(pattern, event.text)
+            result = re.search(pattern, event.message["text"])
             if result:
                 return result.group()
         else:
-            if event['attachments']:
-                attachment = event['attachments'][0]
+            if event.message['attachments']:
+                attachment = event.message['attachments'][0]
             else:
                 return
 
@@ -146,7 +153,7 @@ class VkBot:
 def upload_doc(vk, upload, event, path, title):
     doc = upload.document(path, title=title, tags=[], message_peer_id=event.obj.peer_id)['doc']
     print(doc)
-    vk.messages.send(user_id=event.obj.from_id, random_id=get_random_id(),
+    vk.messages.send(user_id=event.obj.message["from_id"], random_id=get_random_id(),
                      attachment=f"doc{doc['owner_id']}_{doc['id']}")
 
 

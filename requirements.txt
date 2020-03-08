@@ -1,4 +1,4 @@
 youtube_dl
-vk-api
+vk_api
 argparse
 python-dotenv

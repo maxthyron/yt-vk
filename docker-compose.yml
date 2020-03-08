@@ -5,3 +5,4 @@ services:
     container_name: ytvk-bot
     build: .
     command: python api.py 
+    restart: always
