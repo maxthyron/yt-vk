@@ -1,51 +1,59 @@
 import os
 import vk_api
 import re
+import dotenv
+import requests
+import time
+import socket
+import urllib3
 import signal
 import sys
 
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from vk_api.utils import get_random_id
-from env import auth
 from download import Downloader
 
+TIMEOUT_SECONDS = 10
 
 class VkBot:
     def __init__(self):
-        self.vk_session = vk_api.VkApi(login=auth.LOGIN, password=auth.PASSW)
-        try:
-            self.vk_session.auth(token_only=True)
-        except vk_api.AuthError as error_msg:
-            print(error_msg)
-            return
-
-        if os.path.exists("pid"):
-            print("Pid file already exists")
-            exit()
-        else:
-            with open("pid", "w") as pid:
-                pid.write(str(os.getpid()))
-
+        self.timeout = TIMEOUT_SECONDS
         signal.signal(signal.SIGTERM, self.catch_signal)
+        self.init_connection()
 
-        print("ID:", os.getpid())
-        print("Got VK API Session")
-        self.group_session = vk_api.VkApi(token=auth.KEY)
-        print("Got Group Session")
-        self.longpoll = VkBotLongPoll(self.group_session, auth.GROUP_ID)
-        print("Got Longpoll Object")
-        self.api = self.vk_session.get_api()
-        print("Got API Object")
-        self.group_api = self.group_session.get_api()
-        print("Got Group API Object")
-        self.upload = vk_api.VkUpload(self.vk_session)
-        print("Got Upload Object")
-        self.loader = Downloader()
-        print("Got Downloader Object")
+    def init_connection(self):
+        try:
+            self.vk_session = vk_api.VkApi(login=os.getenv("LOGIN"), password=os.getenv("PASSW"))
+            try:
+                self.vk_session.auth(token_only=True)
+            except vk_api.AuthError as error_msg:
+                print(error_msg)
+                return
+
+            print("ID:", os.getpid())
+            print("Got VK API Session")
+            self.group_session = vk_api.VkApi(token=os.getenv("KEY"))
+            print("Got Group Session")
+            self.longpoll = VkBotLongPoll(self.group_session, os.getenv("GROUP_ID"))
+            print("Got Longpoll Object")
+            self.api = self.vk_session.get_api()
+            print("Got API Object")
+            self.group_api = self.group_session.get_api()
+            print("Got Group API Object")
+            self.upload = vk_api.VkUpload(self.vk_session)
+            print("Got Upload Object")
+            self.loader = Downloader()
+            print("Got Downloader Object")
+        except (requests.exceptions.ConnectionError) as e:
+            print("Reinitializing session data")
+            print(e)
+            print("Timeout:", self.timeout)
+            time.sleep(self.timeout)
+            self.timeout += 1
+            self.init_connection()
 
     def catch_signal(self, signal, frame):
-        print("Signal:", signal)
-        os.remove("pid")
+        print("Stopping...")
         sys.exit(0)
 
     def send_message(self, user_id, message, attachment=None):
@@ -88,14 +96,14 @@ class VkBot:
                     else:
                         print(event.type)
                         print()
-            except KeyboardInterrupt:
-                print("Keyboard interrupt")
-                os.remove("pid")
-                os._exit(0)
-            except Exception as e:
-                print("Exception:", e)
+            except (requests.exceptions.ReadTimeout) as e:
+                print("Got exception")
+                print(type(e))
+                print(e)
+                time.sleep(self.timeout)
+                self.init_connection()
+                self.timeout = TIMEOUT_SECONDS
                 self.start()
-                os.exit(0)
 
     def upload_yt(self, event, path, title, artist):
         try:
@@ -143,5 +151,6 @@ def upload_doc(vk, upload, event, path, title):
 
 
 if __name__ == '__main__':
+    dotenv_file = dotenv.load_dotenv(verbose=True)
     bot = VkBot()
     bot.start()

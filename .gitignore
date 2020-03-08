@@ -1,6 +1,5 @@
-pid
-run.pid
 *-venv/
+.env
 logs.txt
 storage
 vk_config*
